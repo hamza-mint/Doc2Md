@@ -38,22 +38,36 @@ A known limitation: a single PDF that mixes real-text Arabic pages with scanned 
 
 ## How it works
 
-```mermaid
-flowchart TD
-    A[Input file] --> B{PDF?}
-    B -- no --> C["anydoc (whole file)"]
-    B -- yes --> D[For each page]
-    D --> E{"pdftotext finds real text?"}
-    E -- yes --> F["Use pdftotext output\n(correct order, any language)"]
-    E -- no, scanned --> G[Extract that single page]
-    G --> H["anydoc --ocr hosted\n(one page at a time)"]
-    F --> I[Splice pages back together\nin original order]
-    H --> I
-    C --> J[Markdown output]
-    I --> J
+**Non-PDF files** (DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV) are simple: the whole file goes to `anydoc` and the Markdown it returns is written out as-is.
+
+**PDFs** are handled one page at a time, so a page's own content — not the whole document — decides how it's processed:
+
+```
+                     each PDF page
+                          │
+                          ▼
+                pdftotext -layout <page>
+                          │
+                 ┌────────┴────────┐
+                 │  did it return   │
+                 │   real text?    │
+                 └────────┬────────┘
+             yes ─────────┼───────── no (scanned image)
+              │           │             │
+              ▼           │             ▼
+      keep pdftotext's    │     pull out just this one page,
+      output as-is        │     send it alone to
+      (correct reading    │     `anydoc --ocr hosted`
+       order, any          │             │
+       language)           │             │
+              │            │             │
+              └─────┬──────┴──────┬──────┘
+                     ▼             ▼
+              add this page's text to the output,
+                   in its original page position
 ```
 
-A desktop notification reports whether the file converted fully locally, needed cloud OCR for some pages, or partially failed.
+Once every page has been resolved this way, the pieces are joined back together in page order into a single `.md` file. A desktop notification then reports whether the file converted fully locally, needed cloud OCR for some pages, or partially failed.
 
 ## Repository layout
 
@@ -130,11 +144,64 @@ Without an API key, hosted OCR still runs in a limited "keyless" mode — fine f
 
 ## Direct usage (any OS with Python — no right-click integration needed)
 
+You don't need Dolphin, Windows Explorer, or any of the installers to use this — `smart_doc2md.py` is a normal command-line script. This is the way to go if you're on macOS, converting files from a script, or just don't want the right-click integration.
+
+### Basic command
+
 ```bash
-python3 smart_doc2md.py file1.pdf file2.docx file3.pptx
+python3 smart_doc2md.py report.pdf
 ```
 
-This writes a `.md` file next to each input file (same name, `.md` extension).
+This reads `report.pdf`, converts it, and writes `report.md` in the **same folder**, with the **same name** (only the extension changes). Nothing is deleted or overwritten except an existing `report.md` from a previous run.
+
+### Converting several files at once
+
+Pass as many files as you want, of any mix of supported types, in one call:
+
+```bash
+python3 smart_doc2md.py chapter1.pdf slides.pptx budget.xlsx notes.docx
+```
+
+Each file is converted independently, one after another, and each gets its own `.md` output and its own notification. If one file fails, the script still moves on to the rest — it doesn't stop the whole batch.
+
+You can also use your shell's own wildcard expansion to convert a whole folder:
+
+```bash
+python3 smart_doc2md.py ~/Documents/lectures/*.pdf
+```
+
+### Paths with spaces or special characters
+
+Quote the path if it contains spaces (very common with scanned files, e.g. from CamScanner):
+
+```bash
+python3 smart_doc2md.py "/College/Algebra/CamScanner 14-07-2026 11.07.pdf"
+```
+
+### What you'll see while it runs
+
+For each file, you'll get one line printed to the terminal (and a matching desktop notification, where supported) once it's done, e.g.:
+
+```
+[تحويل المستند] report.pdf: تم محلياً بالكامل (12 صفحة)
+[تحويل المستند] scan.pdf: 3 صفحة احتاجت OCR سحابي من أصل 10
+[تحويل جزئي] broken.pdf: 1 صفحة فشلت من أصل 5
+```
+
+If a file's type isn't supported, or the path doesn't exist, you'll see a `skip (...)` message on stderr instead, and the script continues with the next file.
+
+### Notifications without a desktop
+
+If there's no `notify-send` (Linux), no GUI (headless server, SSH session), or you're running this from a script/cron job, the desktop notification is simply skipped — the script still prints its result to stdout/stderr either way, so it's safe to use in automation.
+
+### Using the installed copy instead of the repo copy
+
+If you already ran `linux/install.sh` or `windows/install.ps1`, a copy of the script is sitting in a stable location outside the repo — you can call that one directly instead, which is handy for your own scripts or cron jobs so they don't depend on the repo's location:
+
+```bash
+python3 ~/.local/bin/smart_doc2md.py report.pdf          # Linux
+python "%LOCALAPPDATA%\doc2md\smart_doc2md.py" report.pdf # Windows
+```
 
 ## Using it as a Claude Agent Skill
 
