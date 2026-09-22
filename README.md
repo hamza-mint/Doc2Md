@@ -1,6 +1,29 @@
-# doc2md
+<p align="center">
+  <img src="assets/banner.svg" alt="doc2md banner" width="100%">
+</p>
+
+<p align="center">
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-3E6259">
+  <img alt="platforms" src="https://img.shields.io/badge/platform-Linux%20%7C%20Windows-24303D">
+  <img alt="python" src="https://img.shields.io/badge/core-Python%203-3E6259">
+  <img alt="status" src="https://img.shields.io/badge/status-active-24303D">
+</p>
 
 Convert any office document (PDF, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV) into clean Markdown — built specifically so the output can be fed to an AI model with far fewer tokens and much better comprehension than handing it the raw file (or a scanned image).
+
+## Contents
+
+- [Why this exists](#why-this-exists)
+- [How it works](#how-it-works)
+- [Repository layout](#repository-layout)
+- [Requirements](#requirements)
+- [Installation — Linux](#installation--linux-kde-plasma--dolphin)
+- [Installation — Windows](#installation--windows)
+- [Direct usage](#direct-usage-any-os-with-python--no-right-click-integration-needed)
+- [Using it as a Claude Agent Skill](#using-it-as-a-claude-agent-skill)
+- [Setting the API key manually](#setting-the-firecrawl-api-key-manually)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ## Why this exists
 
@@ -15,12 +38,20 @@ A known limitation: a single PDF that mixes real-text Arabic pages with scanned 
 
 ## How it works
 
-For each file:
-- **Non-PDF formats** (DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV) are converted as a whole file via `anydoc`.
-- **PDFs** are processed one page at a time:
-  1. Try `pdftotext -layout` on the page. If it returns real text, use it directly (correct order, any language, no size limit, free, instant).
-  2. If the page has no text layer (i.e. it's a scanned image), extract just that page as a standalone one-page PDF and send it alone to `anydoc --ocr hosted`.
-  3. Splice every page's result back together in the original page order into one Markdown file.
+```mermaid
+flowchart TD
+    A[Input file] --> B{PDF?}
+    B -- no --> C["anydoc (whole file)"]
+    B -- yes --> D[For each page]
+    D --> E{"pdftotext finds real text?"}
+    E -- yes --> F["Use pdftotext output\n(correct order, any language)"]
+    E -- no, scanned --> G[Extract that single page]
+    G --> H["anydoc --ocr hosted\n(one page at a time)"]
+    F --> I[Splice pages back together\nin original order]
+    H --> I
+    C --> J[Markdown output]
+    I --> J
+```
 
 A desktop notification reports whether the file converted fully locally, needed cloud OCR for some pages, or partially failed.
 
@@ -35,12 +66,16 @@ doc2md/
 ├── windows/            # Right-click integration for Windows Explorer
 │   └── install.ps1      #   Installer: checks deps, installs the script, registers a context-menu entry
 │                         #   NOT yet verified on a real Windows machine — see "Windows" section below
-└── skill/              # A Claude Agent Skill wrapping this tool
-    ├── SKILL.md          #   Tells a Claude agent (Claude Code / Claude Desktop) to convert
-    │                     #   documents with this script before reading them, instead of
-    │                     #   reading raw files directly
-    └── smart_doc2md.py   #   A copy of the core script, bundled so the skill folder is self-contained
+├── skill/              # A Claude Agent Skill wrapping this tool
+│   ├── SKILL.md          #   Tells a Claude agent (Claude Code / Claude Desktop) to convert
+│   │                     #   documents with this script before reading them, instead of
+│   │                     #   reading raw files directly
+│   └── smart_doc2md.py   #   A COPY of the core script (see note below)
+└── assets/
+    └── banner.svg        # README banner
 ```
+
+> **Why is `smart_doc2md.py` duplicated inside `skill/`?** A Claude agent skill is meant to be copied on its own — you drop just the `skill/` folder into an agent's skills directory, not the whole repo. So it needs to be self-contained: the script lives inside it too, rather than the skill pointing back out at the repo root. **Maintenance note:** the two copies aren't symlinked (Windows handles that inconsistently), so if you change the core logic in the root `smart_doc2md.py`, copy it into `skill/` again too: `cp smart_doc2md.py skill/smart_doc2md.py`.
 
 ## Requirements
 
@@ -119,10 +154,53 @@ New-Item -ItemType Directory -Force "$env:APPDATA\anydoc"
 
 ## Troubleshooting
 
-- **"You are not authorized to execute this file" (Dolphin/KDE):** the `.desktop` file itself needs execute permission, not just the script it points to. `chmod +x` the file under `~/.local/share/kio/servicemenus/` and rebuild the cache with `kbuildsycoca6` (or `kbuildsycoca5` on Plasma 5).
-- **Right-click entry doesn't appear at all:** rebuild KDE's service cache (`kbuildsycoca6`) or log out/in. On Windows, confirm the registry keys were created under `HKCU:\Software\Classes\SystemFileAssociations\<ext>\shell\ConvertToMarkdown`.
-- **`Firecrawl Parse: status code 499`:** this is exactly the large-scanned-file bug described above — make sure you're running the page-by-page version of the script (`smart_doc2md.py` in this repo), not calling `anydoc --ocr hosted` on the whole file yourself.
-- **Arabic text comes out reversed:** same root cause as above — make sure the PDF page in question actually has a real text layer (run `pdftotext -layout -f N -l N file.pdf -` on that page number to check) and that you're using this repo's script rather than calling `anydoc` directly on the PDF.
+Each entry below is: what you saw → why it happens → how to fix it.
+
+<details>
+<summary><strong>"You are not authorized to execute this file" (Dolphin/KDE)</strong></summary>
+
+- **Symptom:** clicking the right-click entry does nothing but show this error.
+- **Cause:** the `.desktop` file itself needs execute permission — it's not enough for the script it points to to be executable.
+- **Fix:**
+  ```bash
+  chmod +x ~/.local/share/kio/servicemenus/doc2md.desktop
+  kbuildsycoca6   # or kbuildsycoca5 on Plasma 5
+  ```
+</details>
+
+<details>
+<summary><strong>Right-click entry doesn't appear at all</strong></summary>
+
+- **Symptom:** no "Convert to Markdown" option shows up when you right-click a supported file.
+- **Cause:** KDE caches its list of service menus and doesn't always pick up a newly-added one immediately.
+- **Fix (Linux):** rebuild the cache and, if that doesn't help, log out and back in:
+  ```bash
+  kbuildsycoca6
+  ```
+- **Fix (Windows):** confirm the registry keys actually exist: open `regedit` and check
+  `HKEY_CURRENT_USER\Software\Classes\SystemFileAssociations\<ext>\shell\ConvertToMarkdown`
+  for the extension you tested with. If it's missing, re-run `windows\install.ps1`.
+</details>
+
+<details>
+<summary><strong><code>Firecrawl Parse: status code 499</code></strong></summary>
+
+- **Symptom:** conversion fails outright on a scanned PDF with several pages, with this exact error.
+- **Cause:** this is the large-scanned-file bug described above — the connection to the hosted OCR service is cut before it finishes processing the whole document in one request.
+- **Fix:** make sure you're running the page-by-page version of the script (`smart_doc2md.py` in this repo, via the installers or directly), not calling `anydoc --ocr hosted` on the whole file yourself. The script already sends one page at a time specifically to avoid this.
+</details>
+
+<details>
+<summary><strong>Arabic text comes out reversed</strong></summary>
+
+- **Symptom:** the Markdown output has Arabic where every word/line reads backwards, e.g. `"ةيبرعلا ةغللا"` instead of `"اللغة العربية"`.
+- **Cause:** the same root cause as above — `anydoc`'s native PDF text extraction, not this script's own logic, is what's reversing the text.
+- **Fix:** first confirm the page actually has a real text layer (not a scan) by running:
+  ```bash
+  pdftotext -layout -f <page_number> -l <page_number> file.pdf -
+  ```
+  If that prints correct Arabic, make sure you're using this repo's `smart_doc2md.py` rather than calling `anydoc` directly on the PDF — the script routes real-text pages through `pdftotext` specifically to avoid this bug.
+</details>
 
 ## License
 

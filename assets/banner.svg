@@ -1,0 +1,31 @@
+<svg viewBox="0 0 1200 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="doc2md">
+  <rect width="1200" height="320" fill="#F1ECE3"/>
+
+  <!-- left icon: a messy / scanned page -->
+  <g transform="translate(70,75)">
+    <path d="M0 0 H120 L150 30 V170 H0 Z" fill="#FFFFFF" stroke="#C9BEA9" stroke-width="2"/>
+    <path d="M120 0 V30 H150 Z" fill="#E7DFCF" stroke="#C9BEA9" stroke-width="2"/>
+    <line x1="18" y1="46" x2="112" y2="40" stroke="#A79C86" stroke-width="4" stroke-linecap="round" transform="rotate(-2 18 46)"/>
+    <line x1="16" y1="70" x2="128" y2="76" stroke="#A79C86" stroke-width="4" stroke-linecap="round" transform="rotate(1.5 16 70)"/>
+    <line x1="20" y1="96" x2="90" y2="92" stroke="#A79C86" stroke-width="4" stroke-linecap="round" transform="rotate(-1 20 96)"/>
+    <line x1="18" y1="120" x2="120" y2="126" stroke="#A79C86" stroke-width="4" stroke-linecap="round" transform="rotate(2 18 120)"/>
+    <line x1="22" y1="146" x2="100" y2="141" stroke="#A79C86" stroke-width="4" stroke-linecap="round" transform="rotate(-1.5 22 146)"/>
+  </g>
+
+  <!-- wordmark + tagline -->
+  <text x="290" y="168" font-family="Georgia, 'Times New Roman', serif" font-size="76" fill="#24303D">doc2md</text>
+  <text x="292" y="204" font-family="'JetBrains Mono','Courier New',monospace" font-size="19" fill="#3E6259">turns PDFs, scans, and office docs into clean Markdown</text>
+  <text x="292" y="230" font-family="'JetBrains Mono','Courier New',monospace" font-size="19" fill="#8B8171">correct on Arabic (RTL) text, too</text>
+
+  <!-- right icon: clean structured markdown -->
+  <g transform="translate(985,75)">
+    <path d="M0 0 H120 L150 30 V170 H0 Z" fill="#FFFFFF" stroke="#3E6259" stroke-width="2"/>
+    <path d="M120 0 V30 H150 Z" fill="#E4EEEA" stroke="#3E6259" stroke-width="2"/>
+    <line x1="18" y1="42" x2="98" y2="42" stroke="#24303D" stroke-width="6" stroke-linecap="round"/>
+    <line x1="18" y1="66" x2="128" y2="66" stroke="#8B8171" stroke-width="3" stroke-linecap="round"/>
+    <line x1="18" y1="80" x2="112" y2="80" stroke="#8B8171" stroke-width="3" stroke-linecap="round"/>
+    <line x1="18" y1="104" x2="72" y2="104" stroke="#24303D" stroke-width="6" stroke-linecap="round"/>
+    <line x1="18" y1="128" x2="122" y2="128" stroke="#8B8171" stroke-width="3" stroke-linecap="round"/>
+    <line x1="18" y1="142" x2="100" y2="142" stroke="#8B8171" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>
