@@ -49,7 +49,7 @@ A known limitation: a single PDF that mixes real-text Arabic pages with scanned 
                 pdftotext -layout <page>
                           │
                  ┌────────┴────────┐
-                 │  did it return   │
+                 │  did it return  │
                  │   real text?    │
                  └────────┬────────┘
              yes ─────────┼───────── no (scanned image)
@@ -72,15 +72,15 @@ Once every page has been resolved this way, the pieces are joined back together 
 ## Repository layout
 
 ```
-doc2md/
-├── smart_doc2md.py    # Core conversion logic — cross-platform (Linux/macOS/Windows)
-├── linux/             # Right-click integration for Dolphin (KDE Plasma)
-│   ├── install.sh      #   Installer: checks deps, installs the script, registers the menu entry
-│   └── doc2md.desktop  #   KDE service menu definition (template — install.sh fills in your home path)
-├── windows/            # Right-click integration for Windows Explorer
-│   └── install.ps1      #   Installer: checks deps, installs the script, registers a context-menu entry
+doc2md/ 
+├── smart_doc2md.py       # Core conversion logic — cross-platform (Linux/macOS/Windows)
+├── linux/                # Right-click integration for Dolphin (KDE Plasma)
+│   ├── install.sh        #   Installer: checks deps, installs the script, registers the menu entry
+│   └── doc2md.desktop    #   KDE service menu definition (template — install.sh fills in your home path)
+├── windows/              # Right-click integration for Windows Explorer
+│   └── install.ps1       #   Installer: checks deps, installs the script, registers a context-menu entry
 │                         #   NOT yet verified on a real Windows machine — see "Windows" section below
-├── skill/              # A Claude Agent Skill wrapping this tool
+├── skill/                # A Claude Agent Skill wrapping this tool
 │   ├── SKILL.md          #   Tells a Claude agent (Claude Code / Claude Desktop) to convert
 │   │                     #   documents with this script before reading them, instead of
 │   │                     #   reading raw files directly
